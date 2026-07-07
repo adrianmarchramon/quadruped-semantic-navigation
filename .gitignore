@@ -1,0 +1,22 @@
+# Ignore ROS build and development directories
+catkin_ws/build/
+catkin_ws/devel/
+catkin_ws/install/
+catkin_ws/CMakeLists.txt
+catkin_ws/.catkin_workspace
+
+# Ignore YOLO weight files (Too large for version control)
+*.pt
+*.weights
+
+# Ignore Python cache files generated during runtime
+__pycache__/
+*.pyc
+
+# Ignore third-party Unitree hardware SDKs and standard packages
+# This ensures your repository only contains your simulation and control architecture
+catkin_ws/src/UnitreecameraSDK/
+catkin_ws/src/unitree_guide/
+catkin_ws/src/unitree_legged_sdk/
+catkin_ws/src/unitree_ros_to_real/
+catkin_ws/src/unitree_ros/
