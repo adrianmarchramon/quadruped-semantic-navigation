@@ -1,0 +1,46 @@
+<launch>
+    <!-- ============================================================= -->
+    <!--  go1_vision : lanzamiento de la simulacion Gazebo             -->
+    <!--                                                               -->
+    <!--  Practica estandar de ROS: NO modificamos el codigo de       -->
+    <!--  terceros (unitree_ros). Lo invocamos desde nuestro propio    -->
+    <!--  workspace e inyectamos nuestros parametros.                  -->
+    <!--                                                               -->
+    <!--  El mundo canonico y versionado en Git es:                    -->
+    <!--     go1_vision/worlds/oficina_laboratorio.world               -->
+    <!--                                                               -->
+    <!--  NOTA sobre el mundo: normal.launch de Unitree construye la   -->
+    <!--  ruta de forma fija como                                      -->
+    <!--     $(find unitree_gazebo)/worlds/$(arg wname).world          -->
+    <!--  por lo que solo acepta un NOMBRE (wname), no una ruta        -->
+    <!--  arbitraria. Para que la simulacion cargue nuestro mundo,     -->
+    <!--  este debe existir tambien en el paquete unitree_gazebo.      -->
+    <!--  Copia la fuente versionada a su sitio con:                   -->
+    <!--     cp $(find go1_vision)/worlds/oficina_laboratorio.world \  -->
+    <!--        $(find unitree_gazebo)/worlds/                         -->
+    <!-- ============================================================= -->
+
+    <!-- Robot a spawnear (por defecto Go1) -->
+    <arg name="rname"     default="go1"/>
+    <!-- Nombre del mundo (sin extension .world) -->
+    <arg name="wname"     default="oficina_laboratorio"/>
+
+    <!-- Opciones de Gazebo -->
+    <arg name="paused"    default="false"/>
+    <arg name="gui"       default="true"/>
+    <arg name="headless"  default="false"/>
+    <arg name="debug"     default="false"/>
+    <arg name="user_debug" default="false"/>
+
+    <!-- Llamamos al launch estandar de Unitree pasando nuestros parametros -->
+    <include file="$(find unitree_gazebo)/launch/normal.launch">
+        <arg name="rname"      value="$(arg rname)"/>
+        <arg name="wname"      value="$(arg wname)"/>
+        <arg name="paused"     value="$(arg paused)"/>
+        <arg name="gui"        value="$(arg gui)"/>
+        <arg name="headless"   value="$(arg headless)"/>
+        <arg name="debug"      value="$(arg debug)"/>
+        <arg name="user_debug" value="$(arg user_debug)"/>
+    </include>
+
+</launch>
