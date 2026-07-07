@@ -169,6 +169,102 @@ Once Gazebo is running, start the reactive semantic-control node:
 rosrun go1_vision person_detector.py
 ```
 
+### Running the full simulation stack (Docker)
+
+The complete demonstration is orchestrated across several terminals attached to a single container built from the
+provided `Dockerfile` (image tag `ros-noetic-go1`). Each terminal hosts one long-running process; open them in
+order. The paths below assume the workspace is mounted at `/catkin_ws` and the repository lives at
+`$HOME/ros_docker`.
+
+**Terminal 1 — container and Gazebo.** Grant the local X server access to the container, launch it with GPU/display
+forwarding, and bring up Gazebo with the desired world:
+
+```bash
+xhost +local:docker
+
+docker run -it --rm \
+    --env="DISPLAY" \
+    --env="QT_X11_NO_MITSHM=1" \
+    --env="LIBGL_ALWAYS_SOFTWARE=1" \
+    --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw" \
+    --volume="$HOME/ros_docker/catkin_ws:/catkin_ws" \
+    --device=/dev/dri:/dev/dri \
+    --net=host \
+    --privileged \
+    ros-noetic-go1 \
+    bash
+
+# Inside the container:
+source /catkin_ws/devel/setup.bash
+
+# Paper scenario (the asymmetric office environment):
+roslaunch unitree_gazebo normal.launch rname:=go1 wname:=oficina_laboratorio
+
+# Alternatively, a simpler baseline world for tuning:
+# roslaunch unitree_gazebo normal.launch rname:=go1 wname:=earth
+```
+
+> All subsequent terminals attach to the **same** running container via
+> `docker exec -it $(docker ps -q -f ancestor=ros-noetic-go1) bash`.
+
+**Terminal 2 — controllers, locomotion bridge and reset helper.** Start the joint servos, run the `/cmd_vel`
+locomotion bridge, and register a convenience alias that teleports the robot back to its start pose (useful after a
+fall triggers the Go1 passive damping state):
+
+```bash
+docker exec -it $(docker ps -q -f ancestor=ros-noetic-go1) bash
+
+rosrun unitree_controller unitree_servo
+rosrun go1_vision junior_bridge.py
+
+# Register the reset-robot alias (once), then reload the shell or run it directly:
+echo "alias reset-robot=\"rosservice call /gazebo/set_model_state '{model_state: { model_name: 'go1_gazebo', pose: { position: { x: 0.0, y: 0.0, z: 0.4 }, orientation: {x: 0.0, y: 0.0, z: 0.0, w: 1.0} }, reference_frame: 'world' } }'\"" >> ~/.bashrc
+reset-robot
+```
+
+**Terminal 3 — dynamic human target.** Spawn a walking-person model to act as the tracked target, and delete it when
+finished:
+
+```bash
+docker exec -it $(docker ps -q -f ancestor=ros-noetic-go1) bash
+
+rosrun gazebo_ros spawn_model -database person_standing -sdf -model persona_test -x 2.0 -y 1.0 -z 0.0
+rosservice call /gazebo/delete_model "{model_name: 'persona_test'}"
+```
+
+**Terminal 4 — reactive semantic-control node.** Launch the FSM-driven pursuit and obstacle-avoidance node:
+
+```bash
+docker exec -it $(docker ps -q -f ancestor=ros-noetic-go1) bash
+
+rosrun go1_vision person_detector.py
+```
+
+**Terminal 5 — service trigger.** Invoke the `/find_person` service to initiate a search/follow cycle on demand:
+
+```bash
+docker exec -it $(docker ps -q -f ancestor=ros-noetic-go1) bash
+
+rosservice call /find_person
+```
+
+**Terminal 6 — image inspection.** Visualise the camera and annotated-detection streams:
+
+```bash
+docker exec -it $(docker ps -q -f ancestor=ros-noetic-go1) bash
+
+rqt_image_view
+```
+
+**Terminal 7 — standalone detector (optional).** Run the independent YOLOv8-Seg detector for isolated inspection of
+the segmentation output:
+
+```bash
+docker exec -it $(docker ps -q -f ancestor=ros-noetic-go1) bash
+
+python3 /catkin_ws/src/go1_vision/scripts/yolo_detector.py
+```
+
 ---
 
 ## Node reference
